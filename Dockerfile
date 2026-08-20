@@ -89,7 +89,7 @@ COPY --from=builder --chown=nonroot:nonroot /app-libs/ /app/
 #  * @param       -XX:+UseStringDeduplication : Reduces memory footprint for identical strings.
 #  */
 # ----------------------------------------------------------------------------------------------
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -XX:+UseStringDeduplication"
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=50.0 -XX:+UseZGC -XX:+ZGenerational -XX:+UseStringDeduplication"
 ENV MICRONAUT_SERVER_PORT=8080
 
 # Fallback topology URIs (Should be overridden via Kubernetes Secrets in production orchestration)
