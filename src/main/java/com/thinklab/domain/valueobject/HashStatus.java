@@ -27,7 +27,7 @@ import java.util.Objects;
  * are non-blocking, CPU-bound pure functions. They are designed to be invoked directly within Project Reactor
  * operators (e.g., {@code .map()}, {@code .doOnNext()}) without risk of blocking the Netty EventLoop.
  *
- * @author ThinkLab
+ * @version 1.0.0
  * @since 1.0
  */
 public enum HashStatus {
@@ -79,11 +79,11 @@ public enum HashStatus {
      *
      * @param targetStatus The desired state to evaluate.
      * @return {@code true} if the transition is allowed by the state machine; {@code false} otherwise.
-     * @throws NullPointerException if the {@code targetStatus} is null.
      */
     public boolean canTransitionTo(HashStatus targetStatus) {
-        Objects.requireNonNull(targetStatus, "Target HashStatus must not be null for transition evaluation.");
-
+        if (targetStatus == null) {
+            return false;
+        }
         return switch (this) {
             case ACTIVE -> targetStatus == INACTIVE || targetStatus == REVOKED;
             case INACTIVE -> targetStatus == ACTIVE || targetStatus == REVOKED;
