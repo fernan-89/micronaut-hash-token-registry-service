@@ -76,7 +76,7 @@ LABEL maintainer="Thinklab Core Infrastructure & High-Assurance Engineering Team
 LABEL version="v3.5.0-NASA-SRE-PROD-STABLE"
 LABEL description="Thinklab Hash Service - Mission-Critical Reactive Micronaut 4 Runtime"
 LABEL enviroment="Personal Home-Lab for Development"
-LABEL git-repo="https://github.com/fernan-89/micronaut-hash-service"
+LABEL git-repo="https://github.com/fernan-89/micronaut-hash-token-registry-service"
 
 WORKDIR /app
 

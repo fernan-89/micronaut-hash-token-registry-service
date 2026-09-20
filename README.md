@@ -103,7 +103,7 @@ The project utilizes a highly optimized Multi-Stage Dockerfile leveraging BuildK
 
 ```bash
 # Build the Distroless Container Image
-docker build -t thinklab-hash-service:latest .
+docker build -t thinklab-hash-token-registry-service:latest .
 
 # Apply Kubernetes strict deployment manifest
 kubectl apply -f k8s-deployment.yaml

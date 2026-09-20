@@ -16,7 +16,7 @@
 
 micronaut:
   application:
-    name: thinklab-hash-service
+    name: thinklab-hash-token-registry-service
     instance:
       id: ${random.shortuuid}
 

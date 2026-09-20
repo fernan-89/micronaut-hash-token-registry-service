@@ -61,7 +61,7 @@
         </rollingPolicy>
 
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"service":"thinklab-hash-service","domain":"forensic-audit"}</customFields>
+            <customFields>{"service":"thinklab-hash-token-registry-service","domain":"forensic-audit"}</customFields>
         </encoder>
     </appender>
 
