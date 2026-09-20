@@ -91,7 +91,13 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
             if (exception instanceof ConstraintViolationException constraintEx) {
                 log.warn("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - JSR-380 input validation failure intercepted: {}",
                         path, constraintEx.getMessage());
-                return handleValidationException(constraintEx, path);
+                return handleValidationMessage(constraintEx.getMessage(), path);
+            }
+
+            if (exception instanceof IllegalArgumentException illegalArgumentEx) {
+                log.warn("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - Malformed input intercepted: {}",
+                        path, illegalArgumentEx.getMessage());
+                return handleValidationMessage(illegalArgumentEx.getMessage(), path);
             }
 
             log.error("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - CRITICAL: Unhandled technical failure encountered in pipeline: {}",
@@ -126,13 +132,13 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
     /**
      * Maps edge validation failures (JSR-380) to HTTP 400 Bad Request.
      */
-    private HttpResponse<Map<String, Object>> handleValidationException(ConstraintViolationException ex, String path) {
+    private HttpResponse<Map<String, Object>> handleValidationMessage(String message, String path) {
         Map<String, Object> problem = createProblemDetails(
                 URI.create(PROBLEM_TYPE_BASE_URI + "err-validation-00400"),
                 "ERR-VALIDATION-00400",
                 HttpStatus.BAD_REQUEST.getCode(),
                 HttpStatus.BAD_REQUEST.getReason(),
-                "The request payload failed structural validation constraints: " + ex.getMessage(),
+                "The request payload failed structural validation constraints: " + message,
                 path
         );
 
