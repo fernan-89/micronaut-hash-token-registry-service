@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e0f3f3a5-52a5-49d0-aa1d-c611334563c7",
     "name": "Hash Service - Comprehensive Lifecycle & Telemetry Suite",
-    "description": "Suite E2E abrangente para o HashController. Valida o ciclo de vida completo, algoritmos, listagem, trilhas de auditoria, testes negativos e injeção automática de Trace ID para correlação de logs MDC.",
+    "description": "Suite E2E abrangente para o Hash Token Registry Service Domain (BIAN-aligned, ADR-013). Valida o ciclo de vida completo sob /hash-token-registry/v1 (initiate, retrieve, control/deactivate|reactivate|revoke), sanitização de payload (Convenção B), busca multi-dimensional, listagem por status, trilha de auditoria, testes negativos e injeção automática de Trace ID para correlação de logs MDC.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "39879181"
   },
@@ -39,12 +39,8 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["health"]
             }
           },
           "response": []
@@ -52,10 +48,10 @@
       ]
     },
     {
-      "name": "01. Lifecycle Scenarios",
+      "name": "01. Lifecycle Scenarios (BIAN Behavior Qualifiers)",
       "item": [
         {
-          "name": "01. Generate Hash (SHA3_256)",
+          "name": "01. Initiate Hash (SHA_256)",
           "event": [
             {
               "listen": "test",
@@ -64,12 +60,13 @@
                   "pm.test(\"Status 201 Created\", () => pm.response.to.have.status(201));",
                   "const jsonData = pm.response.json();",
                   "pm.environment.set(\"hashId\", jsonData.id);",
-                  "pm.test(\"Contract: ID and HashValue are generated\", () => {",
+                  "pm.test(\"Contract: ID and generatedHash are present\", () => {",
                   "    pm.expect(jsonData.id).to.not.be.undefined;",
-                  "    pm.expect(jsonData.hashValue).to.not.be.undefined;",
+                  "    pm.expect(jsonData.generatedHash).to.not.be.undefined;",
                   "});",
                   "pm.test(\"Contract: Status is ACTIVE\", () => pm.expect(jsonData.status).to.eql(\"ACTIVE\"));",
-                  "pm.test(\"Algorithm matches SHA3_256\", () => pm.expect(jsonData.algorithm).to.eql(\"SHA3_256\"));"
+                  "pm.test(\"Algorithm matches SHA_256\", () => pm.expect(jsonData.algorithm).to.eql(\"SHA_256\"));",
+                  "pm.test(\"Contract: sourceService echoes X-Source-Service header\", () => pm.expect(jsonData.sourceService).to.eql(\"mobile-app\"));"
                 ],
                 "type": "text/javascript"
               }
@@ -77,30 +74,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" },
+              { "key": "X-Source-Service", "value": "mobile-app" },
+              { "key": "X-Executor", "value": "{{executor}}" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"tenantId\": \"{{tenant_id}}\",\n    \"payload\": \"dado-de-teste-sha3-{{$randomAlphaNumeric}}\",\n    \"algorithm\": \"SHA3_256\",\n    \"sourceService\": \"mobile-app\",\n    \"executor\": \"{{executor}}\",\n    \"asSerialKey\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n    \"payload\": \"  dado-de-teste-sha256-{{$randomAlphaNumeric}}  \",\n    \"algorithm\": \"SHA_256\",\n    \"asSerialKey\": true\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{base_url}}/hashes",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "initiate"]
             }
           },
           "response": []
         },
         {
-          "name": "02. Get Hash By ID",
+          "name": "02. Retrieve Hash By ID",
           "event": [
             {
               "listen": "test",
@@ -117,27 +110,22 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "retrieve"]
             }
           },
           "response": []
         },
         {
-          "name": "03. List Tenant Hashes (Paginated)",
+          "name": "03. Retrieve Tenant Hashes (Paginated)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Returns array structure\", () => {",
+                  "pm.test(\"Returns paginated content array\", () => {",
                   "    const res = pm.response.json();",
                   "    pm.expect(Array.isArray(res.content) ? res.content : res).to.not.be.empty;",
                   "});"
@@ -149,39 +137,88 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenant_id}}"
-              }
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" }
             ],
             "url": {
-              "raw": "{{base_url}}/hashes?page=0&size=20&status=ACTIVE",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes"
-              ],
+              "raw": "{{base_url}}/hash-token-registry/v1/retrieve?page=0&size=20&status=ACTIVE",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "retrieve"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "20"
-                },
-                {
-                  "key": "status",
-                  "value": "ACTIVE"
-                }
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "status", "value": "ACTIVE" }
               ]
             }
           },
           "response": []
         },
         {
-          "name": "04. Deactivate Hash",
+          "name": "04. Search Hashes by Source Service (Convention B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Returns paginated content array\", () => {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(Array.isArray(res.content) ? res.content : res).to.not.be.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hash-token-registry/v1/retrieve/search?sourceService=mobile-app&status=ACTIVE",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "retrieve", "search"],
+              "query": [
+                { "key": "sourceService", "value": "mobile-app" },
+                { "key": "status", "value": "ACTIVE" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05. Retrieve Hashes By Status (Convention B)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test(\"All returned items are ACTIVE\", () => {",
+                  "    const items = Array.isArray(res.content) ? res.content : res;",
+                  "    items.forEach(item => pm.expect(item.status).to.eql(\"ACTIVE\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Id", "value": "{{tenant_id}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hash-token-registry/v1/status/ACTIVE/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "status", "ACTIVE", "retrieve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06. Control: Deactivate Hash",
           "event": [
             {
               "listen": "test",
@@ -195,33 +232,25 @@
             }
           ],
           "request": {
-            "method": "PATCH",
-            "header": [],
+            "method": "PUT",
+            "header": [
+              { "key": "X-Executor", "value": "{{executor}}" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"executor\": \"{{executor}}\",\n    \"reason\": \"Manutenção programada e suspensão temporária\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n    \"reason\": \"Manutenção programada e suspensão temporária\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}/deactivate",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}",
-                "deactivate"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/control/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "control", "deactivate"]
             }
           },
           "response": []
         },
         {
-          "name": "05. Reactivate Hash",
+          "name": "07. Control: Reactivate Hash",
           "event": [
             {
               "listen": "test",
@@ -235,33 +264,25 @@
             }
           ],
           "request": {
-            "method": "PATCH",
-            "header": [],
+            "method": "PUT",
+            "header": [
+              { "key": "X-Executor", "value": "{{executor}}" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"executor\": \"{{executor}}\",\n    \"reason\": \"Retorno à operação regulamentar\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n    \"reason\": \"Retorno à operação regulamentar\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}/reactivate",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}",
-                "reactivate"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/control/reactivate",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "control", "reactivate"]
             }
           },
           "response": []
         },
         {
-          "name": "06. Get Forensic Audit Trail",
+          "name": "08. Retrieve Forensic Audit Trail",
           "event": [
             {
               "listen": "test",
@@ -279,21 +300,44 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}/audit",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}",
-                "audit"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/audit-log/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "audit-log", "retrieve"]
             }
           },
           "response": []
         },
         {
-          "name": "07. Revoke Hash (Terminal State)",
+          "name": "09. Retrieve 360° Full Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200 OK\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Contains consolidated hash + auditLogs\", () => {",
+                  "    pm.expect(json.hash).to.not.be.undefined;",
+                  "    pm.expect(json.auditLogs).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/full-profile/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "full-profile", "retrieve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. Control: Revoke Hash (Terminal State)",
           "event": [
             {
               "listen": "test",
@@ -307,26 +351,19 @@
             }
           ],
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "method": "PUT",
+            "header": [
+              { "key": "X-Executor", "value": "{{executor}}" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"executor\": \"{{executor}}\",\n    \"reason\": \"Comprometimento crítico de segurança detectado\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n    \"reason\": \"Comprometimento crítico de segurança detectado\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/control/revoke",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "control", "revoke"]
             }
           },
           "response": []
@@ -337,7 +374,7 @@
       "name": "02. Negative Testing (Resilience)",
       "item": [
         {
-          "name": "08. Error: Validation Failure (Missing Tenant)",
+          "name": "11. Error: Validation Failure (Missing X-Tenant-Id)",
           "event": [
             {
               "listen": "test",
@@ -350,37 +387,25 @@
             }
           ],
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"payload\": \"missing-tenant-payload\",\n    \"algorithm\": \"SHA3_256\",\n    \"sourceService\": \"mobile-app\",\n    \"executor\": \"{{executor}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{base_url}}/hashes",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "retrieve"]
             }
           },
           "response": []
         },
         {
-          "name": "09. Error: Hash Not Found",
+          "name": "12. Error: Hash Not Found",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status 404 Not Found\", () => pm.response.to.have.status(404));"
+                  "pm.test(\"Status 404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"RFC 7807 error_code is ERR-HASH-00404\", () => pm.expect(pm.response.json().error_code).to.eql(\"ERR-HASH-00404\"));"
                 ],
                 "type": "text/javascript"
               }
@@ -390,55 +415,70 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/hashes/00000000-0000-0000-0000-000000000000",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "00000000-0000-0000-0000-000000000000"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/00000000-0000-0000-0000-000000000000/retrieve",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "00000000-0000-0000-0000-000000000000", "retrieve"]
             }
           },
           "response": []
         },
         {
-          "name": "10. Error: Reactivate REVOKED Hash",
+          "name": "13. Error: Reactivate REVOKED Hash (Terminal State Conflict)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status is 4xx (Bad Request or Conflict)\", () => {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([400, 409, 422]);",
-                  "});"
+                  "pm.test(\"Status is 409 Conflict\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"RFC 7807 error_code is ERR-HASH-00409\", () => pm.expect(pm.response.json().error_code).to.eql(\"ERR-HASH-00409\"));"
                 ],
                 "type": "text/javascript"
               }
             }
           ],
           "request": {
-            "method": "PATCH",
+            "method": "PUT",
+            "header": [
+              { "key": "X-Executor", "value": "hacker" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Tentando reativar item revogado\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/control/reactivate",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "control", "reactivate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14. Error: Missing X-Executor Header on Control",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", () => pm.response.to.have.status(400));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"executor\": \"hacker\",\n    \"reason\": \"Tentando reativar item revogado\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n    \"reason\": \"Missing executor header on purpose\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{base_url}}/hashes/{{hashId}}/reactivate",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "hashes",
-                "{{hashId}}",
-                "reactivate"
-              ]
+              "raw": "{{base_url}}/hash-token-registry/v1/{{hashId}}/control/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["hash-token-registry", "v1", "{{hashId}}", "control", "deactivate"]
             }
           },
           "response": []
