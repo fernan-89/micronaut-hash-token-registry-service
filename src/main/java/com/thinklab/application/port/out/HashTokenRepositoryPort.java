@@ -95,4 +95,27 @@ public interface HashTokenRepositoryPort {
      * @throws NullPointerException if any parameter is null.
      */
     Flux<HashToken> findAllByTenantIdAndStatus(String tenantId, HashStatus status, Pageable pageable);
+
+    /**
+     * Retrieves a paginated reactive stream of hash token aggregates filtered by tenant and the originating
+     * source service, regardless of operational status. Backs the Convention B search behavior qualifier.
+     *
+     * @param tenantId      The isolated tenant boundary identifier. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param pageable      Pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} emitting matching {@link HashToken} aggregates.
+     */
+    Flux<HashToken> findAllByTenantIdAndSourceService(String tenantId, String sourceService, Pageable pageable);
+
+    /**
+     * Retrieves a paginated reactive stream of hash token aggregates filtered by tenant, source service,
+     * and operational status simultaneously. Backs the Convention B search behavior qualifier.
+     *
+     * @param tenantId      The isolated tenant boundary identifier. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param status        The specific operational {@link HashStatus} filter. Must not be null.
+     * @param pageable      Pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} emitting matching {@link HashToken} aggregates.
+     */
+    Flux<HashToken> findAllByTenantIdAndSourceServiceAndStatus(String tenantId, String sourceService, HashStatus status, Pageable pageable);
 }

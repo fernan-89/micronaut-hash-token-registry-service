@@ -16,7 +16,8 @@ import java.util.Objects;
  *
  * <p><b>Architectural Role:</b>
  * This Data Transfer Object (DTO) acts as the formal, strongly-typed interface definition for the HTTP
- * generation endpoint. It serves as an Anti-Corruption Layer (ACL) at the outermost edge of the system.
+ * generation endpoint (BIAN Behavior Qualifier: {@code initiate}). It serves as an Anti-Corruption Layer (ACL)
+ * at the outermost edge of the system.
  *
  * <p><b>Contractual Obligations:</b>
  * <ul>
@@ -25,16 +26,14 @@ import java.util.Objects;
  * <li><b>Resource Exhaustion Mitigation (DoS Protection):</b> Enforces strict schema compliance and
  *     upper boundaries on payload sizes (max 10,000 characters) synchronously at the Netty HTTP edge,
  *     dropping malicious payloads before they consume business-layer memory or CPU cycles.</li>
- * <li><b>Forensic Completeness:</b> Captures and mandates strict multi-tenant context, source attribution,
- *     and executor identity required for immutable auditability.</li>
+ * <li><b>Header-Sourced Forensics:</b> {@code sourceService} and {@code executor} are no longer accepted
+ *     in the body — they are extracted from the mandatory {@code X-Source-Service} and {@code X-Executor}
+ *     headers by the controller, following the platform-wide cross-service convention.</li>
  * </ul>
  *
- * @param tenantId      The strictly validated identifier of the isolated tenant requesting the generation.
- * @param payload       The raw, bounded string data to be cryptographically processed.
- * @param algorithm     The specific cryptographic algorithm chosen for this operation.
- * @param sourceService The identifier of the external microservice or system invoking this action.
- * @param executor      The verified principal identifier of the user or system authorizing this action.
- * @param asSerialKey   Flag indicating if the cryptographic output should be structurally formatted as a serial key.
+ * @param payload     The raw, bounded string data to be cryptographically processed.
+ * @param algorithm   The specific cryptographic algorithm chosen for this operation.
+ * @param asSerialKey Flag indicating if the cryptographic output should be structurally formatted as a serial key.
  *
  * @author ThinkLab
  * @since 1.0
@@ -43,30 +42,18 @@ import java.util.Objects;
 @Introspected
 @Schema(
         name = "GenerateHashRequest",
-        description = "Mandatory payload required to initiate a new cryptographic token generation process."
+        description = "Mandatory payload required to initiate a new cryptographic token generation process. Tenant, source service, and executor context are supplied via headers (X-Tenant-Id, X-Source-Service, X-Executor)."
 )
 public record GenerateHashRequest(
 
-        @NotBlank(message = "Tenant ID is universally mandatory for data isolation.")
-        @Schema(description = "Isolated tenant identifier.", example = "THINKLAB-PROD-01")
-        String tenantId,
-
         @NotBlank(message = "Cryptographic payload cannot be blank.")
         @Size(max = 10000, message = "Payload exceeds the absolute security limit of 10,000 characters.")
-        @Schema(description = "Raw content to be hashed. Capped at 10,000 characters to prevent DoS.", example = "raw-transaction-data-v1")
+        @Schema(description = "Raw content to be hashed. Capped at 10,000 characters to prevent DoS. Sanitized (trimmed, special characters stripped) before hashing; the raw value is retained internally as originalPayload.", example = "raw-transaction-data-v1")
         String payload,
 
         @NotNull(message = "A cryptographic algorithm strategy must be explicitly specified.")
-        @Schema(description = "The cryptographic algorithm strategy to be utilized.", example = "SHA3_512")
+        @Schema(description = "The cryptographic algorithm strategy to be utilized.", example = "SHA_256")
         HashAlgorithm algorithm,
-
-        @NotBlank(message = "Source service identifier is mandatory for distributed tracing.")
-        @Schema(description = "Identification of the upstream system requesting the hash.", example = "order-management-service")
-        String sourceService,
-
-        @NotBlank(message = "Executor identification is mandatory for forensic auditing.")
-        @Schema(description = "Identification of the agent or process executing the action.", example = "admin-user-01")
-        String executor,
 
         @Schema(description = "If true, mathematically formats the final output into a segmented serial key.", defaultValue = "false")
         boolean asSerialKey
@@ -83,23 +70,11 @@ public record GenerateHashRequest(
      * @throws IllegalArgumentException if any mandatory string parameter is blank.
      */
     public GenerateHashRequest {
-        Objects.requireNonNull(tenantId, "Edge Invariant Violation: Tenant ID cannot be null.");
         Objects.requireNonNull(payload, "Edge Invariant Violation: Payload cannot be null.");
         Objects.requireNonNull(algorithm, "Edge Invariant Violation: Cryptographic algorithm cannot be null.");
-        Objects.requireNonNull(sourceService, "Edge Invariant Violation: Source service cannot be null.");
-        Objects.requireNonNull(executor, "Edge Invariant Violation: Executor cannot be null.");
 
-        if (tenantId.isBlank()) {
-            throw new IllegalArgumentException("Edge Invariant Violation: Tenant ID cannot be blank.");
-        }
         if (payload.isBlank()) {
             throw new IllegalArgumentException("Edge Invariant Violation: Payload cannot be blank.");
-        }
-        if (sourceService.isBlank()) {
-            throw new IllegalArgumentException("Edge Invariant Violation: Source service cannot be blank.");
-        }
-        if (executor.isBlank()) {
-            throw new IllegalArgumentException("Edge Invariant Violation: Executor cannot be blank.");
         }
     }
 
@@ -109,15 +84,18 @@ public record GenerateHashRequest(
      * <p><b>Contract:</b> This method acts as the secure translation bridge between the Volatile Transport
      * Protocol (HTTP) and the Immutable Application Use Case boundary.
      *
+     * @param tenantId      Tenant context resolved from the {@code X-Tenant-Id} header.
+     * @param sourceService Calling service identity resolved from the {@code X-Source-Service} header.
+     * @param executor      Executor identity resolved from the {@code X-Executor} header.
      * @return A pristine, strictly validated {@link GenerateHashCommand} ready for asynchronous processing.
      */
-    public GenerateHashCommand toCommand() {
+    public GenerateHashCommand toCommand(String tenantId, String sourceService, String executor) {
         return new GenerateHashCommand(
-                this.tenantId,
+                tenantId,
                 this.payload,
                 this.algorithm,
-                this.sourceService,
-                this.executor,
+                sourceService,
+                executor,
                 this.asSerialKey
         );
     }

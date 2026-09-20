@@ -35,7 +35,8 @@ import java.util.UUID;
  * @param id            Universally unique identifier (stored as BSON Binary).
  * @param tenantId      Identifier for multi-tenant data isolation.
  * @param sourceService The originating system or microservice name.
- * @param payload       The original content before hashing (may be empty, but never null).
+ * @param payload       The sanitized content (trimmed, special characters stripped) that was actually hashed.
+ * @param originalPayload The raw, unsanitized content exactly as received at the API boundary, retained for forensic comparison.
  * @param generatedHash The resulting cryptographic string.
  * @param algorithm     The cryptographic strategy used for hashing.
  * @param status        The current lifecycle state of the token.
@@ -53,6 +54,7 @@ public record HashToken(
         String tenantId,
         String sourceService,
         String payload,
+        String originalPayload,
         String generatedHash,
         HashAlgorithm algorithm,
         HashStatus status,
@@ -77,6 +79,7 @@ public record HashToken(
         Objects.requireNonNull(tenantId, "Domain Invariant Violation: Tenant ID cannot be null.");
         Objects.requireNonNull(sourceService, "Domain Invariant Violation: Source service cannot be null.");
         Objects.requireNonNull(payload, "Domain Invariant Violation: Payload cannot be null.");
+        Objects.requireNonNull(originalPayload, "Domain Invariant Violation: Original payload cannot be null.");
         Objects.requireNonNull(generatedHash, "Domain Invariant Violation: Generated hash cannot be null.");
         Objects.requireNonNull(algorithm, "Domain Invariant Violation: Algorithm cannot be null.");
         Objects.requireNonNull(status, "Domain Invariant Violation: Status cannot be null.");
@@ -104,7 +107,8 @@ public record HashToken(
      * @param id            The deterministically generated UUID.
      * @param tenantId      Identifier for multi-tenant isolation.
      * @param sourceService Originating system name.
-     * @param payload       Original content before hashing.
+     * @param payload       Sanitized content that will actually be hashed.
+     * @param originalPayload Raw content exactly as received, before sanitization.
      * @param generatedHash Resulting cryptographic string.
      * @param algorithm     Strategy used for hashing.
      * @param creator       Identification of the agent or system executing the creation.
@@ -115,6 +119,7 @@ public record HashToken(
             String tenantId,
             String sourceService,
             String payload,
+            String originalPayload,
             String generatedHash,
             HashAlgorithm algorithm,
             String creator
@@ -124,6 +129,7 @@ public record HashToken(
                 tenantId,
                 sourceService,
                 payload,
+                originalPayload,
                 generatedHash,
                 algorithm,
                 HashStatus.ACTIVE,
@@ -154,7 +160,7 @@ public record HashToken(
         this.status.validateTransitionTo(HashStatus.INACTIVE);
 
         return new HashToken(
-                id, tenantId, sourceService, payload, generatedHash,
+                id, tenantId, sourceService, payload, originalPayload, generatedHash,
                 algorithm, HashStatus.INACTIVE, createdBy, createdAt,
                 executor, Instant.now(), version
         );
@@ -179,7 +185,7 @@ public record HashToken(
         this.status.validateTransitionTo(HashStatus.ACTIVE);
 
         return new HashToken(
-                id, tenantId, sourceService, payload, generatedHash,
+                id, tenantId, sourceService, payload, originalPayload, generatedHash,
                 algorithm, HashStatus.ACTIVE, createdBy, createdAt,
                 executor, Instant.now(), version
         );
@@ -205,7 +211,7 @@ public record HashToken(
         this.status.validateTransitionTo(HashStatus.REVOKED);
 
         return new HashToken(
-                id, tenantId, sourceService, payload, generatedHash,
+                id, tenantId, sourceService, payload, originalPayload, generatedHash,
                 algorithm, HashStatus.REVOKED, createdBy, createdAt,
                 executor, Instant.now(), version
         );

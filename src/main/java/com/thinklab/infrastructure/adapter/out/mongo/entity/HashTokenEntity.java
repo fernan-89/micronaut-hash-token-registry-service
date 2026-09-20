@@ -64,6 +64,8 @@ public record HashTokenEntity(
 
         String payload,
 
+        String originalPayload,
+
         String generatedHash,
 
         HashAlgorithm algorithm,
@@ -96,6 +98,7 @@ public record HashTokenEntity(
         Objects.requireNonNull(tenantId, "Persistence Invariant Violation: Tenant ID cannot be null.");
         Objects.requireNonNull(sourceService, "Persistence Invariant Violation: Source Service cannot be null.");
         Objects.requireNonNull(payload, "Persistence Invariant Violation: Payload cannot be null.");
+        Objects.requireNonNull(originalPayload, "Persistence Invariant Violation: Original payload cannot be null.");
         Objects.requireNonNull(generatedHash, "Persistence Invariant Violation: Generated Hash cannot be null.");
         Objects.requireNonNull(algorithm, "Persistence Invariant Violation: Algorithm cannot be null.");
         Objects.requireNonNull(status, "Persistence Invariant Violation: Status cannot be null.");
@@ -134,6 +137,7 @@ public record HashTokenEntity(
                 domain.tenantId(),
                 domain.sourceService(),
                 domain.payload(),
+                domain.originalPayload(),
                 domain.generatedHash(),
                 domain.algorithm(),
                 domain.status(),
@@ -156,6 +160,7 @@ public record HashTokenEntity(
                 tenantId,
                 sourceService,
                 payload,
+                originalPayload,
                 generatedHash,
                 algorithm,
                 status,

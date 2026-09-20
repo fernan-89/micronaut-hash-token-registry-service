@@ -23,9 +23,9 @@ import io.swagger.v3.oas.annotations.info.License;
  */
 @OpenAPIDefinition(
         info = @Info(
-                title = "Thinklab Hash Service",
-                version = "v3.4.1",
-                description = "Enterprise-grade cryptographic hash orchestration, reactive persistence, and forensic auditing service. Built on Zero-Trust principles with Project Reactor.",
+                title = "Thinklab Hash Token Registry Service Domain",
+                version = "v4.0.0",
+                description = "BIAN-aligned Service Domain (Control Record: HashToken) for cryptographic hash orchestration, reactive persistence, and forensic auditing. All routes follow the /hash-token-registry/v1/{behavior-qualifier} convention (initiate, retrieve, control). Built on Zero-Trust principles with Project Reactor.",
                 contact = @Contact(
                         name = "Thinklab SRE & Security Operations",
                         email = "sre-core@thinklab.com",

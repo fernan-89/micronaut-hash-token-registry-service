@@ -19,6 +19,7 @@ import java.security.MessageDigest;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Application Interactor: Implementation of the {@link GenerateHashUseCase} input port.
@@ -48,6 +49,9 @@ import java.util.UUID;
 @Slf4j
 @Singleton
 public class GenerateHashInteractor implements GenerateHashUseCase {
+
+    private static final Pattern CONTROL_CHARACTERS = Pattern.compile("\\p{Cntrl}");
+    private static final Pattern SPECIAL_CHARACTERS = Pattern.compile("[^\\p{L}\\p{N}\\s\\-_.,:;@/]");
 
     private final HashTokenRepositoryPort hashTokenRepository;
     private final HashAuditRepositoryPort hashAuditRepository;
@@ -87,27 +91,40 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
     public Mono<HashToken> execute(GenerateHashCommand command) {
         Objects.requireNonNull(command, "Application constraint violated: GenerateHashCommand cannot be null.");
 
-        return hashTokenRepository.existsActiveByTenantAndPayload(command.tenantId(), command.payload())
+        String sanitizedPayload = sanitize(command.payload());
+
+        return hashTokenRepository.existsActiveByTenantAndPayload(command.tenantId(), sanitizedPayload)
                 .flatMap(exists -> {
                     if (exists) {
                         log.warn("[ACTION: GENERATE_HASH] [TENANT: {}] - Orchestration halted: Active hash already exists for this payload.", command.tenantId());
                         return Mono.error(new DuplicateHashException("ERR-HASH-00409",
                                 "An active cryptographic hash already exists for the provided tenant and payload context."));
                     }
-                    return performGeneration(command);
+                    return performGeneration(command, sanitizedPayload);
                 })
                 .doOnSubscribe(s -> log.info("[ACTION: GENERATE_HASH] [TENANT: {}] [ALGO: {}] - Initiating orchestration pipeline for cryptographic generation.", command.tenantId(), command.algorithm().name()));
     }
 
     /**
+     * Normalizes raw input by trimming boundary whitespace, stripping control characters, and removing
+     * special characters outside the safe alphanumeric/punctuation set (Convention B payload sanitization).
+     * The raw, unsanitized value is preserved separately as {@code originalPayload} for forensic comparison.
+     */
+    private String sanitize(String rawPayload) {
+        String trimmed = rawPayload.trim();
+        String withoutControlChars = CONTROL_CHARACTERS.matcher(trimmed).replaceAll("");
+        return SPECIAL_CHARACTERS.matcher(withoutControlChars).replaceAll("");
+    }
+
+    /**
      * Executes CPU-bound cryptographic calculations and transactionally binds them to persistence.
      */
-    private Mono<HashToken> performGeneration(GenerateHashCommand command) {
+    private Mono<HashToken> performGeneration(GenerateHashCommand command, String sanitizedPayload) {
         UUID txId = UUID.randomUUID(); // Reactive transaction correlation ID
 
         return Mono.fromCallable(() -> {
-                    // 1. Calculate cryptographic hash using requested algorithm
-                    String generatedHash = calculateHash(command.payload(), command.algorithm());
+                    // 1. Calculate cryptographic hash using requested algorithm over the sanitized payload
+                    String generatedHash = calculateHash(sanitizedPayload, command.algorithm());
 
                     // 2. Format as serial key if requested
                     if (command.asSerialKey()) {
@@ -115,12 +132,13 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
                     }
 
                     // 3. Identity Sovereignty: Derive deterministic UUID from SHA3-512 seed
-                    UUID deterministicId = generateDeterministicId(command.tenantId(), command.payload());
+                    UUID deterministicId = generateDeterministicId(command.tenantId(), sanitizedPayload);
 
                     return HashToken.create(
                             deterministicId,
                             command.tenantId(),
                             command.sourceService(),
+                            sanitizedPayload,
                             command.payload(),
                             generatedHash,
                             command.algorithm(),

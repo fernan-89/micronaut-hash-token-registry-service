@@ -95,4 +95,34 @@ public interface HashTokenMongoRepository extends ReactorCrudRepository<HashToke
             String tenantId,
             Pageable pageable
     );
+
+    /**
+     * Retrieves a paginated reactive stream of hash entities filtered by tenant and source service.
+     *
+     * @param tenantId      The isolated tenant boundary identifier. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param pageable      The pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} emitting matching hash persistence entities.
+     */
+    Flux<HashTokenEntity> findByTenantIdAndSourceService(
+            String tenantId,
+            String sourceService,
+            Pageable pageable
+    );
+
+    /**
+     * Retrieves a paginated reactive stream of hash entities filtered by tenant, source service, and status.
+     *
+     * @param tenantId      The isolated tenant boundary identifier. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param status        The target operational status filter. Must not be null.
+     * @param pageable      The pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} emitting matching hash persistence entities.
+     */
+    Flux<HashTokenEntity> findByTenantIdAndSourceServiceAndStatus(
+            String tenantId,
+            String sourceService,
+            HashStatus status,
+            Pageable pageable
+    );
 }

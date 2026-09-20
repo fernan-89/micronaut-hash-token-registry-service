@@ -54,6 +54,7 @@ class HashControllerTest {
     @Mock private GenerateHashUseCase generateHashUseCase;
     @Mock private GetHashUseCase getHashUseCase;
     @Mock private ListHashesUseCase listHashesUseCase;
+    @Mock private SearchHashesUseCase searchHashesUseCase;
     @Mock private DeactivateHashUseCase deactivateHashUseCase;
     @Mock private ReactivateHashUseCase reactivateHashUseCase;
     @Mock private RevokeHashUseCase revokeHashUseCase;
@@ -72,25 +73,23 @@ class HashControllerTest {
     @BeforeEach
     void setUp() {
         dummyToken = HashToken.create(
-                dummyId, tenantId, "mission-control-api", "SEEDED-DATA-2026",
+                dummyId, tenantId, "mission-control-api", "SEEDED-DATA-2026", "SEEDED-DATA-2026",
                 "3f2e1a...f8e9", HashAlgorithm.SHA3_512, "staff-engineer-01"
         );
     }
 
     /**
-     * Validates that POST /hashes delegates to the correct UseCase and returns 201 Created.
+     * Validates that POST /hash-token-registry/v1/initiate delegates to the correct UseCase and returns 201 Created.
      */
     @Test
-    @DisplayName("POST /hashes - Should delegate to GenerateHashUseCase and return 210 CREATED")
-    void shouldGenerateHashAndReturn201() {
-        // Given: A valid generation request
-        GenerateHashRequest request = new GenerateHashRequest(
-                tenantId, "MISSION-DATA", HashAlgorithm.SHA3_512, "source-api", "admin", false
-        );
+    @DisplayName("POST /hash-token-registry/v1/initiate - Should delegate to GenerateHashUseCase and return 201 CREATED")
+    void shouldInitiateHashAndReturn201() {
+        // Given: A valid generation request (tenant/source/executor now travel via headers)
+        GenerateHashRequest request = new GenerateHashRequest("MISSION-DATA", HashAlgorithm.SHA3_512, false);
         when(generateHashUseCase.execute(any(GenerateHashCommand.class))).thenReturn(Mono.just(dummyToken));
 
         // When & Then: Execute the controller method and verify the reactive response (DTO id is native UUID)
-        StepVerifier.create(controller.generate(request))
+        StepVerifier.create(controller.initiate(tenantId, "source-api", "admin", request))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.CREATED, response.getStatus());
                     assertNotNull(response.body());
@@ -102,16 +101,16 @@ class HashControllerTest {
     }
 
     /**
-     * Validates that GET /hashes/{id} retrieves a specific token with 200 OK.
+     * Validates that GET /hash-token-registry/v1/{id}/retrieve retrieves a specific token with 200 OK.
      */
     @Test
-    @DisplayName("GET /hashes/{id} - Should return 200 OK with projected metadata")
-    void shouldGetHashById() {
+    @DisplayName("GET /hash-token-registry/v1/{id}/retrieve - Should return 200 OK with projected metadata")
+    void shouldRetrieveHashById() {
         // Given: The registry exists
         when(getHashUseCase.execute(any(GetHashQuery.class))).thenReturn(Mono.just(dummyToken));
 
         // When & Then
-        StepVerifier.create(controller.getById(dummyId))
+        StepVerifier.create(controller.retrieveById(dummyId))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.OK, response.getStatus());
                     assertEquals(dummyId, response.body().id());
@@ -124,8 +123,8 @@ class HashControllerTest {
      * Tests parallel aggregation of state and immutable forensic audit trails.
      */
     @Test
-    @DisplayName("GET /hashes/{id}/details - Should return aggregated 360° view")
-    void shouldGetFullViewWithAuditTrail() {
+    @DisplayName("GET /hash-token-registry/v1/{id}/full-profile/retrieve - Should return aggregated 360° view")
+    void shouldRetrieveFullProfileWithAuditTrail() {
         // Given: State and Audit records exist
         HashAudit auditLog = HashAudit.create(
                 UUID.randomUUID(), tenantId, dummyId, "GENERATE", "SUCCESS", "system", Map.of()
@@ -134,7 +133,7 @@ class HashControllerTest {
         when(getAuditLogsUseCase.execute(dummyId)).thenReturn(Flux.just(auditLog));
 
         // When & Then: Verify the consolidated parallel projection
-        StepVerifier.create(controller.getFullView(dummyId))
+        StepVerifier.create(controller.retrieveFullProfile(dummyId))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.OK, response.getStatus());
                     assertNotNull(response.body().hash());
@@ -144,16 +143,16 @@ class HashControllerTest {
     }
 
     /**
-     * Validates that GET /hashes enforces tenant isolation and pagination.
+     * Validates that GET /hash-token-registry/v1/retrieve enforces tenant isolation and pagination.
      */
     @Test
-    @DisplayName("GET /hashes - Should return paginated stream scoped to tenant")
-    void shouldListTenantHashes() {
+    @DisplayName("GET /hash-token-registry/v1/retrieve - Should return paginated stream scoped to tenant")
+    void shouldRetrieveAllTenantHashes() {
         // Given: UseCase returns a stream of tokens
         when(listHashesUseCase.execute(any(ListHashesQuery.class))).thenReturn(Flux.just(dummyToken));
 
         // When & Then
-        StepVerifier.create(controller.list(tenantId, HashStatus.ACTIVE, 0, 20))
+        StepVerifier.create(controller.retrieveAll(tenantId, HashStatus.ACTIVE, 0, 20))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.OK, response.getStatus());
                     assertEquals(1, response.body().content().size());
@@ -165,15 +164,15 @@ class HashControllerTest {
      * Validates lifecycle mutation: ACTIVE -> INACTIVE.
      */
     @Test
-    @DisplayName("PATCH /hashes/{id}/deactivate - Should transition status to INACTIVE")
-    void shouldDeactivateHash() {
+    @DisplayName("PUT /hash-token-registry/v1/{id}/control/deactivate - Should transition status to INACTIVE")
+    void shouldControlDeactivateHash() {
         // Given: Transition results in an inactive token
         HashToken inactiveToken = dummyToken.deactivate("security-admin");
-        DeactivateHashRequest request = new DeactivateHashRequest("security-admin", "Maintenance");
+        DeactivateHashRequest request = new DeactivateHashRequest("Maintenance");
         when(deactivateHashUseCase.execute(any(DeactivateHashCommand.class))).thenReturn(Mono.just(inactiveToken));
 
         // When & Then (DTO status is exposed as String "INACTIVE")
-        StepVerifier.create(controller.deactivate(dummyId, request))
+        StepVerifier.create(controller.controlDeactivate(dummyId, "security-admin", request))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.OK, response.getStatus());
                     assertEquals("INACTIVE", response.body().status());
@@ -185,15 +184,15 @@ class HashControllerTest {
      * Validates terminal lifecycle event: Irreversible revocation.
      */
     @Test
-    @DisplayName("DELETE /hashes/{id} - Should transition to terminal REVOKED state")
-    void shouldRevokeHashPermanently() {
+    @DisplayName("PUT /hash-token-registry/v1/{id}/control/revoke - Should transition to terminal REVOKED state")
+    void shouldControlRevokeHashPermanently() {
         // Given: Revocation intent
         HashToken revokedToken = dummyToken.revoke("secops-admin");
-        RevokeHashRequest request = new RevokeHashRequest("secops-admin", "Security compromise");
+        RevokeHashRequest request = new RevokeHashRequest("Security compromise detected by automated monitoring");
         when(revokeHashUseCase.execute(any(RevokeHashCommand.class))).thenReturn(Mono.just(revokedToken));
 
         // When & Then (DTO status is exposed as Enum HashStatus.REVOKED)
-        StepVerifier.create(controller.revoke(dummyId, request))
+        StepVerifier.create(controller.controlRevoke(dummyId, "secops-admin", request))
                 .assertNext(response -> {
                     assertEquals(HttpStatus.OK, response.getStatus());
                     assertEquals(HashStatus.REVOKED, response.body().status());

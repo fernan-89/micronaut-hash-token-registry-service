@@ -47,7 +47,7 @@ class HashTokenTest {
 
         // When: Materializing the new aggregate root
         HashToken token = HashToken.create(
-                id, tenantId, sourceService, payload, generatedHash, algorithm, creator
+                id, tenantId, sourceService, payload, payload, generatedHash, algorithm, creator
         );
 
         // Then: Assert structural and behavioral integrity
@@ -150,7 +150,7 @@ class HashTokenTest {
     private HashToken createActiveToken() {
         return HashToken.create(
                 UUID.randomUUID(), "TENANT-NASA-SEED", "test-service",
-                "payload", "hash-v1", HashAlgorithm.SHA_256, "unit-test-runner"
+                "payload", "payload", "hash-v1", HashAlgorithm.SHA_256, "unit-test-runner"
         );
     }
 }

@@ -186,4 +186,46 @@ public class HashTokenRepositoryAdapter implements HashTokenRepositoryPort {
                 .doOnSubscribe(s -> log.trace("[ACTION: LIST_TOKENS_STATUS] [TENANT: {}] [STATUS: {}] [PAGE: {}] - Fetching filtered tenant hashes.", tenantId, status, pageable.getNumber()))
                 .doOnError(e -> log.error("[ACTION: LIST_TOKENS_STATUS] [TENANT: {}] [STATUS: {}] - Error listing filtered hashes: {}", tenantId, status, e.getMessage(), e));
     }
+
+    /**
+     * Retrieves filtered hashes for a tenant and source service using reactive pagination.
+     *
+     * @param tenantId      The isolated tenant context. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param pageable      The pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} stream of matching domain aggregates.
+     */
+    @Override
+    public Flux<HashToken> findAllByTenantIdAndSourceService(String tenantId, String sourceService, Pageable pageable) {
+        Objects.requireNonNull(tenantId, "Infrastructure constraint violated: Tenant ID is mandatory.");
+        Objects.requireNonNull(sourceService, "Infrastructure constraint violated: Source service is mandatory.");
+        Objects.requireNonNull(pageable, "Infrastructure constraint violated: Pageable configuration cannot be null.");
+
+        return repository.findByTenantIdAndSourceService(tenantId, sourceService, pageable)
+                .map(HashTokenEntity::toDomain)
+                .doOnSubscribe(s -> log.trace("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] - Fetching hashes by source service.", tenantId, sourceService))
+                .doOnError(e -> log.error("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] - Error searching hashes: {}", tenantId, sourceService, e.getMessage(), e));
+    }
+
+    /**
+     * Retrieves filtered hashes for a tenant, source service, and status using reactive pagination.
+     *
+     * @param tenantId      The isolated tenant context. Must not be null or blank.
+     * @param sourceService The originating microservice or upstream system identifier. Must not be null or blank.
+     * @param status        The target operational status filter. Must not be null.
+     * @param pageable      The pagination and sorting metadata configuration. Must not be null.
+     * @return A {@link Flux} stream of matching domain aggregates.
+     */
+    @Override
+    public Flux<HashToken> findAllByTenantIdAndSourceServiceAndStatus(String tenantId, String sourceService, HashStatus status, Pageable pageable) {
+        Objects.requireNonNull(tenantId, "Infrastructure constraint violated: Tenant ID is mandatory.");
+        Objects.requireNonNull(sourceService, "Infrastructure constraint violated: Source service is mandatory.");
+        Objects.requireNonNull(status, "Infrastructure constraint violated: HashStatus filter cannot be null.");
+        Objects.requireNonNull(pageable, "Infrastructure constraint violated: Pageable configuration cannot be null.");
+
+        return repository.findByTenantIdAndSourceServiceAndStatus(tenantId, sourceService, status, pageable)
+                .map(HashTokenEntity::toDomain)
+                .doOnSubscribe(s -> log.trace("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] [STATUS: {}] - Fetching hashes by source service and status.", tenantId, sourceService, status))
+                .doOnError(e -> log.error("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] [STATUS: {}] - Error searching hashes: {}", tenantId, sourceService, status, e.getMessage(), e));
+    }
 }
