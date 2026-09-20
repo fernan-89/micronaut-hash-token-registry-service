@@ -60,3 +60,5 @@ logs/
 *.yml.local
 gradle.properties
 !gradle.properties.template
+# Keep the wrapper jar so a fresh clone can run ./gradlew
+!gradle/wrapper/gradle-wrapper.jar
