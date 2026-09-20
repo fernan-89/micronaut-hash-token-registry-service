@@ -114,7 +114,33 @@ kubectl apply -f k8s-deployment.yaml
 
 * **Health and Readiness Probes:** `http://localhost:8080/health`
 * **Swagger UI (Interactive API Contract):** `http://localhost:8080/swagger-ui`
-* **OpenAPI Specs (Raw YAML):** `http://localhost:8080/swagger/thinklab-hash-service-1.0.0.yml`
+* **OpenAPI Specs (Raw YAML):** `http://localhost:8080/swagger/thinklab-hash-token-registry-service-domain-v4.0.0.yml`
+
+### BIAN Behavior Qualifier Contract (`/hash-token-registry/v1`)
+
+All mutations require the `X-Executor` header (`initiate` also requires `X-Tenant-Id` and `X-Source-Service`). There is no `DELETE` — `control/revoke` replaces the previous destructive verb with a terminal, idempotent `PUT`.
+
+| Behavior Qualifier | Method & Path |
+|---|---|
+| initiate | `POST /hash-token-registry/v1/initiate` |
+| retrieve (single) | `GET /hash-token-registry/v1/{id}/retrieve` |
+| retrieve (collection) | `GET /hash-token-registry/v1/retrieve` |
+| retrieve/search (Convention B) | `GET /hash-token-registry/v1/retrieve/search` |
+| retrieve by status (Convention B) | `GET /hash-token-registry/v1/status/{status}/retrieve` |
+| control/deactivate, reactivate, revoke | `PUT /hash-token-registry/v1/{id}/control/{action}` |
+| audit-log/retrieve | `GET /hash-token-registry/v1/{id}/audit-log/retrieve` |
+| full-profile/retrieve | `GET /hash-token-registry/v1/{id}/full-profile/retrieve` |
+
+Example:
+
+```bash
+curl -X POST http://localhost:8080/hash-token-registry/v1/initiate \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: tenant-prod-alpha-1" \
+  -H "X-Source-Service: order-management-service" \
+  -H "X-Executor: admin-user-01" \
+  -d '{"payload":"raw-transaction-data-v1","algorithm":"SHA_256","asSerialKey":false}'
+```
 
 ### E2E Testing (Postman)
 
