@@ -142,11 +142,16 @@ public enum HashAlgorithm {
      *                               (Critical Infrastructure Failure).
      */
     public MessageDigest getMessageDigest() {
+        return digestFor(this.standardName);
+    }
+
+    /** Resolves a digest by JCA name, reporting a missing provider as an infrastructure failure. */
+    public static MessageDigest digestFor(String standardName) {
         try {
-            return MessageDigest.getInstance(this.standardName);
+            return MessageDigest.getInstance(standardName);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(
-                    "Critical Infrastructure Failure: Cryptographic algorithm '" + this.standardName +
+                    "Critical Infrastructure Failure: Cryptographic algorithm '" + standardName +
                             "' is not supported by the currently registered JVM Security Providers.", e);
         }
     }

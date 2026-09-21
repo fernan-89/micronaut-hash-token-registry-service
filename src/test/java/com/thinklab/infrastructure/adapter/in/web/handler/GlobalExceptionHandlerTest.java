@@ -115,4 +115,26 @@ class GlobalExceptionHandlerTest {
         Mockito.when(request.getAttribute(Mockito.eq("traceId"), Mockito.eq(String.class))).thenReturn(Optional.of("attr-trace"));
         assertProblem(exceptionHandler.handle(request, new HashNotFoundException(UUID.randomUUID())), HttpStatus.NOT_FOUND, "ERR-HASH-00404");
     }
+
+    @Test
+    @DisplayName("a trace id supplied by the X-Trace-Id header is honoured; a blank one is replaced")
+    void traceIdFromHeader() {
+        Mockito.when(headers.get("X-Trace-Id")).thenReturn("header-trace");
+        assertProblem(exceptionHandler.handle(request, new HashNotFoundException(UUID.randomUUID())), HttpStatus.NOT_FOUND, "ERR-HASH-00404");
+
+        Mockito.when(headers.get("X-Trace-Id")).thenReturn("  ");
+        assertProblem(exceptionHandler.handle(request, new HashNotFoundException(UUID.randomUUID())), HttpStatus.NOT_FOUND, "ERR-HASH-00404");
+    }
+
+    @Test
+    @DisplayName("an unknown business error code is reported as a 409 conflict")
+    void unknownBusinessCodeIsConflict() {
+        class Custom extends com.thinklab.domain.exception.BusinessException {
+            Custom() {
+                super("ERR-HASH-09999", "custom rule violated");
+            }
+        }
+
+        assertProblem(exceptionHandler.handle(request, new Custom()), HttpStatus.CONFLICT, "ERR-HASH-09999");
+    }
 }

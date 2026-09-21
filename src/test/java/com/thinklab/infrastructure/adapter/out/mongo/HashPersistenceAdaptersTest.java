@@ -22,6 +22,7 @@ import reactor.test.StepVerifier;
 import java.util.Map;
 import java.util.UUID;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -181,5 +182,30 @@ class HashPersistenceAdaptersTest {
         StepVerifier.create(auditAdapter.findByEntityId(token.id())).expectNext(audit).verifyComplete();
 
         verify(auditRepository).findByTenantIdOrderByTimestampDesc(TENANT);
+    }
+
+    @Test
+    @DisplayName("every adapter query surfaces a driver failure as an error signal")
+    void adaptersPropagateFailures() {
+        RuntimeException boom = new IllegalStateException("mongo down");
+        when(tokenRepository.update(any(HashTokenEntity.class))).thenReturn(Mono.error(boom));
+        when(tokenRepository.findById(any(UUID.class))).thenReturn(Mono.error(boom));
+        when(tokenRepository.findByTenantId(eq(TENANT), any(Pageable.class))).thenReturn(Flux.error(boom));
+        when(tokenRepository.findByTenantIdAndStatus(eq(TENANT), any(HashStatus.class), any(Pageable.class))).thenReturn(Flux.error(boom));
+        when(tokenRepository.findByTenantIdAndSourceService(eq(TENANT), eq("svc"), any(Pageable.class))).thenReturn(Flux.error(boom));
+        when(tokenRepository.findByTenantIdAndSourceServiceAndStatus(eq(TENANT), eq("svc"), any(HashStatus.class), any(Pageable.class))).thenReturn(Flux.error(boom));
+        when(auditRepository.findByTxId(any(UUID.class))).thenReturn(Flux.error(boom));
+        when(auditRepository.findByTenantIdOrderByTimestampDesc(TENANT)).thenReturn(Flux.error(boom));
+        when(auditRepository.findByEntityId(any(UUID.class))).thenReturn(Flux.error(boom));
+
+        StepVerifier.create(tokenAdapter.update(token)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(tokenAdapter.findById(token.id())).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(tokenAdapter.findAllByTenantId(TENANT, page)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(tokenAdapter.findAllByTenantIdAndStatus(TENANT, HashStatus.ACTIVE, page)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(tokenAdapter.findAllByTenantIdAndSourceService(TENANT, "svc", page)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(tokenAdapter.findAllByTenantIdAndSourceServiceAndStatus(TENANT, "svc", HashStatus.ACTIVE, page)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(auditAdapter.findByTxId(UUID.randomUUID())).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(auditAdapter.findByTenantId(TENANT)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(auditAdapter.findByEntityId(UUID.randomUUID())).expectError(IllegalStateException.class).verify();
     }
 }

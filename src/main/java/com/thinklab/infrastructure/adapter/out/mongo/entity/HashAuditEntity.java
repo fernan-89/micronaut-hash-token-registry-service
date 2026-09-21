@@ -111,9 +111,7 @@ public record HashAuditEntity(
         }
 
         // Defensively secure the metadata map using Map.copyOf (intrinsically rejects null keys and values).
-        metadata = (metadata == null || metadata.isEmpty())
-                ? Collections.emptyMap()
-                : Map.copyOf(metadata);
+        metadata = metadata == null ? Collections.emptyMap() : Map.copyOf(metadata);
     }
 
     /**

@@ -147,7 +147,7 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
                 })
                 .subscribeOn(Schedulers.parallel()) // Offloads compute-bound hashing to protect Netty EventLoop
                 .flatMap(hashTokenRepository::save)
-                .flatMap(savedToken -> createAuditLog(savedToken, txId, command.executor())
+                .flatMap(savedToken -> createAuditLog(savedToken, txId, command.executor(), command.asSerialKey())
                         .thenReturn(savedToken))
                 .doOnSuccess(token -> log.info("[ACTION: GENERATE_HASH] [ID: {}] [TENANT: {}] - Orchestration completed. Entity generated and forensic audit successfully persisted.", token.id(), command.tenantId()))
                 .doOnError(error -> {
@@ -162,29 +162,25 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
      * as the base cryptographic seed, fulfilling the Identity Sovereignty architectural mandate.
      */
     private UUID generateDeterministicId(String tenantId, String payload) {
-        try {
-            MessageDigest digest = HashAlgorithm.SHA3_512.getMessageDigest();
-            String seedInput = tenantId + "::" + payload;
-            byte[] hashBytes = digest.digest(seedInput.getBytes(StandardCharsets.UTF_8));
+        MessageDigest digest = HashAlgorithm.SHA3_512.getMessageDigest();
+        String seedInput = tenantId + "::" + payload;
+        byte[] hashBytes = digest.digest(seedInput.getBytes(StandardCharsets.UTF_8));
 
-            // Extract the first 16 bytes of the SHA3-512 digest to construct a deterministic UUID
-            long msb = 0;
-            long lsb = 0;
-            for (int i = 0; i < 8; i++) {
-                msb = (msb << 8) | (hashBytes[i] & 0xff);
-            }
-            for (int i = 8; i < 16; i++) {
-                lsb = (lsb << 8) | (hashBytes[i] & 0xff);
-            }
-
-            // Set version to 4 (pseudo-random / derived) and variant to IETF RFC 4122
-            msb = (msb & 0xffffffffffff0fffL) | 0x0000000000004000L;
-            lsb = (lsb & 0x3fffffffffffffffL) | 0x8000000000000000L;
-
-            return new UUID(msb, lsb);
-        } catch (Exception e) {
-            throw new IllegalStateException("Critical Infrastructure Failure: Failed to compute deterministic SHA3-512 seed identifier.", e);
+        // Extract the first 16 bytes of the SHA3-512 digest to construct a deterministic UUID
+        long msb = 0;
+        long lsb = 0;
+        for (int i = 0; i < 8; i++) {
+            msb = (msb << 8) | (hashBytes[i] & 0xff);
         }
+        for (int i = 8; i < 16; i++) {
+            lsb = (lsb << 8) | (hashBytes[i] & 0xff);
+        }
+
+        // Set version to 4 (pseudo-random / derived) and variant to IETF RFC 4122
+        msb = (msb & 0xffffffffffff0fffL) | 0x0000000000004000L;
+        lsb = (lsb & 0x3fffffffffffffffL) | 0x8000000000000000L;
+
+        return new UUID(msb, lsb);
     }
 
     /**
@@ -210,10 +206,6 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
     private String formatAsSerialKey(String hash) {
         String clean = hash.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
 
-        if (clean.length() < 25) {
-            clean = (clean + "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789").substring(0, 25);
-        }
-
         return String.format("%s-%s-%s-%s-%s",
                 clean.substring(0, 5),
                 clean.substring(5, 10),
@@ -226,7 +218,7 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
     /**
      * Constructs and persists an immutable forensic audit record for the generation lifecycle event.
      */
-    private Mono<HashAudit> createAuditLog(HashToken token, UUID txId, String executor) {
+    private Mono<HashAudit> createAuditLog(HashToken token, UUID txId, String executor, boolean serialKey) {
         HashAudit audit = HashAudit.create(
                 txId,
                 token.tenantId(),
@@ -237,7 +229,7 @@ public class GenerateHashInteractor implements GenerateHashUseCase {
                 Map.of(
                         "algorithm", token.algorithm().name(),
                         "tokenId", token.id().toString(),
-                        "isSerialKey", String.valueOf(!token.generatedHash().equals(token.payload()))
+                        "isSerialKey", String.valueOf(serialKey)
                 )
         );
 

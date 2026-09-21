@@ -79,7 +79,8 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
         final String activeTraceId = traceId;
 
         // Binds the Trace ID to MDC specifically for the exception handling execution scope
-        try (MDC.MDCCloseable ignored = MDC.putCloseable(MDC_TRACE_KEY, activeTraceId)) {
+        MDC.put(MDC_TRACE_KEY, activeTraceId);
+        try {
             String path = request.getPath();
 
             if (exception instanceof BusinessException businessEx) {
@@ -103,6 +104,8 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
             log.error("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - CRITICAL: Unhandled technical failure encountered in pipeline: {}",
                     path, exception.getMessage(), exception);
             return handleGenericException(exception, path);
+        } finally {
+            MDC.remove(MDC_TRACE_KEY);
         }
     }
 
@@ -113,8 +116,7 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
     private HttpResponse<Map<String, Object>> handleBusinessException(BusinessException ex, String path) {
         HttpStatus status = switch (ex.getErrorCode()) {
             case "ERR-HASH-00404" -> HttpStatus.NOT_FOUND;
-            case "ERR-HASH-00409" -> HttpStatus.CONFLICT;
-            default -> HttpStatus.UNPROCESSABLE_ENTITY;
+            default -> HttpStatus.CONFLICT;
         };
 
         Map<String, Object> problem = createProblemDetails(

@@ -142,4 +142,31 @@ class GenerateHashInteractorTest {
         verifyNoInteractions(hashTokenRepository);
         verifyNoInteractions(hashAuditRepository);
     }
+
+    @Test
+    @DisplayName("A serial-key request formats the digest as five dash-separated groups")
+    void shouldFormatSerialKey() {
+        GenerateHashCommand serial = new GenerateHashCommand(tenantId, "NASA-MISSION-DATA-2026", HashAlgorithm.SHA3_512,
+                "svc", "op", true);
+        when(hashTokenRepository.existsActiveByTenantAndPayload(anyString(), anyString())).thenReturn(Mono.just(false));
+        when(hashTokenRepository.save(any(HashToken.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+        when(hashAuditRepository.save(any(HashAudit.class))).thenReturn(Mono.just(mock(HashAudit.class)));
+
+        StepVerifier.create(interactor.execute(serial))
+                .assertNext(token -> org.junit.jupiter.api.Assertions.assertTrue(
+                        token.generatedHash().matches("[A-Z0-9]{5}(-[A-Z0-9]{5}){4}")))
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("A persistence failure surfaces as an error signal, a duplicate race is not logged as critical")
+    void shouldPropagatePersistenceFailures() {
+        when(hashTokenRepository.existsActiveByTenantAndPayload(anyString(), anyString())).thenReturn(Mono.just(false));
+        when(hashTokenRepository.save(any(HashToken.class)))
+                .thenReturn(Mono.error(new IllegalStateException("mongo down")))
+                .thenReturn(Mono.error(new DuplicateHashException("ERR-HASH-00409", "race lost")));
+
+        StepVerifier.create(interactor.execute(command)).expectError(IllegalStateException.class).verify();
+        StepVerifier.create(interactor.execute(command)).expectError(DuplicateHashException.class).verify();
+    }
 }

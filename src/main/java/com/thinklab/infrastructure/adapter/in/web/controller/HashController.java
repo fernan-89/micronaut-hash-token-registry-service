@@ -177,7 +177,7 @@ public class HashController {
                 .map(content -> PagedHashResponse.of(content, 0, page, size))
                 .map(HttpResponse::ok)
                 .doOnSubscribe(s -> log.info("[ACTION: RETRIEVE_HASHES] [TENANT: {}] [STATUS: {}] [PAGE: {}] [SIZE: {}] - Initiating paginated discovery query.", tenantId, status, page, size))
-                .doOnSuccess(res -> log.info("[ACTION: RETRIEVE_HASHES] [TENANT: {}] - Paginated discovery completed successfully. Elements projected: {}", tenantId, res.body() != null ? res.body().content().size() : 0))
+                .doOnSuccess(res -> log.info("[ACTION: RETRIEVE_HASHES] [TENANT: {}] - Paginated discovery completed successfully. Elements projected: {}", tenantId, res.body().content().size()))
                 .doOnError(err -> log.error("[ACTION: RETRIEVE_HASHES] [TENANT: {}] - Paginated discovery failed: {}", tenantId, err.getMessage()));
     }
 
@@ -326,7 +326,7 @@ public class HashController {
                 .collectList()
                 .map(HttpResponse::ok)
                 .doOnSubscribe(s -> log.info("[ACTION: RETRIEVE_AUDIT_LOG] [ID: {}] - Initiating extraction of immutable forensic state mutations.", id))
-                .doOnSuccess(res -> log.info("[ACTION: RETRIEVE_AUDIT_LOG] [ID: {}] - Forensic trail successfully extracted. Total historical events projected: {}", id, res.body() != null ? res.body().size() : 0))
+                .doOnSuccess(res -> log.info("[ACTION: RETRIEVE_AUDIT_LOG] [ID: {}] - Forensic trail successfully extracted. Total historical events projected: {}", id, res.body().size()))
                 .doOnError(err -> log.error("[ACTION: RETRIEVE_AUDIT_LOG] [ID: {}] - Forensic trail extraction failed: {}", id, err.getMessage()));
     }
 
