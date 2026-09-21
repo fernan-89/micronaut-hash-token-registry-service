@@ -148,3 +148,7 @@ A complete "Hash Lifecycle Suite" is available for Postman, dynamically integrat
 
 * The collection utilizes pre-request scripts to inject a fresh standard `traceparent` or `X-Trace-Id` into every call, mirroring service-mesh environments.
 * Includes automated assertions (`pm.test`) to validate structural integrity, HTTP RFC 7807 problem details, and state machine transitions across the entire cryptographic token lifecycle.
+
+## License
+
+Proprietary - all rights reserved. See [LICENSE](LICENSE). This software is not open source.
