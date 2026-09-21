@@ -78,6 +78,7 @@ public class HashController {
     private final GetHashUseCase getHashUseCase;
     private final ListHashesUseCase listHashesUseCase;
     private final SearchHashesUseCase searchHashesUseCase;
+    private final CountHashesUseCase countHashesUseCase;
     private final DeactivateHashUseCase deactivateHashUseCase;
     private final ReactivateHashUseCase reactivateHashUseCase;
     private final RevokeHashUseCase revokeHashUseCase;
@@ -95,8 +96,10 @@ public class HashController {
             DeactivateHashUseCase deactivateHashUseCase,
             ReactivateHashUseCase reactivateHashUseCase,
             RevokeHashUseCase revokeHashUseCase,
-            GetAuditLogsUseCase getAuditLogsUseCase
+            GetAuditLogsUseCase getAuditLogsUseCase,
+            CountHashesUseCase countHashesUseCase
     ) {
+        this.countHashesUseCase = countHashesUseCase;
         this.generateHashUseCase = generateHashUseCase;
         this.getHashUseCase = getHashUseCase;
         this.listHashesUseCase = listHashesUseCase;
@@ -174,7 +177,8 @@ public class HashController {
         return listHashesUseCase.execute(new ListHashesQuery(tenantId, status, page, size))
                 .map(HashResponse::fromDomain)
                 .collectList()
-                .map(content -> PagedHashResponse.of(content, 0, page, size))
+                .zipWith(countHashesUseCase.execute(tenantId, null, status))
+                .map(tuple -> PagedHashResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .map(HttpResponse::ok)
                 .doOnSubscribe(s -> log.info("[ACTION: RETRIEVE_HASHES] [TENANT: {}] [STATUS: {}] [PAGE: {}] [SIZE: {}] - Initiating paginated discovery query.", tenantId, status, page, size))
                 .doOnSuccess(res -> log.info("[ACTION: RETRIEVE_HASHES] [TENANT: {}] - Paginated discovery completed successfully. Elements projected: {}", tenantId, res.body().content().size()))
@@ -201,7 +205,8 @@ public class HashController {
         return searchHashesUseCase.execute(new SearchHashesQuery(tenantId, sourceService, status, page, size))
                 .map(HashResponse::fromDomain)
                 .collectList()
-                .map(content -> PagedHashResponse.of(content, 0, page, size))
+                .zipWith(countHashesUseCase.execute(tenantId, sourceService, status))
+                .map(tuple -> PagedHashResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .map(HttpResponse::ok)
                 .doOnSubscribe(s -> log.info("[ACTION: SEARCH_HASHES] [TENANT: {}] [SOURCE: {}] [STATUS: {}] - Initiating multi-dimensional search query.", tenantId, sourceService, status))
                 .doOnError(err -> log.error("[ACTION: SEARCH_HASHES] [TENANT: {}] - Search failed: {}", tenantId, err.getMessage()));
@@ -226,7 +231,8 @@ public class HashController {
         return listHashesUseCase.execute(new ListHashesQuery(tenantId, status, page, size))
                 .map(HashResponse::fromDomain)
                 .collectList()
-                .map(content -> PagedHashResponse.of(content, 0, page, size))
+                .zipWith(countHashesUseCase.execute(tenantId, null, status))
+                .map(tuple -> PagedHashResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .map(HttpResponse::ok)
                 .doOnSubscribe(s -> log.info("[ACTION: RETRIEVE_HASHES_BY_STATUS] [TENANT: {}] [STATUS: {}] - Initiating status-scoped discovery query.", tenantId, status))
                 .doOnError(err -> log.error("[ACTION: RETRIEVE_HASHES_BY_STATUS] [TENANT: {}] [STATUS: {}] - Discovery failed: {}", tenantId, status, err.getMessage()));

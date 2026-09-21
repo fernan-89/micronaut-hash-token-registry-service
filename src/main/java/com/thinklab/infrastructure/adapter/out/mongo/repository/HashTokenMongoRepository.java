@@ -119,6 +119,14 @@ public interface HashTokenMongoRepository extends ReactorCrudRepository<HashToke
      * @param pageable      The pagination and sorting metadata configuration. Must not be null.
      * @return A {@link Flux} emitting matching hash persistence entities.
      */
+    Mono<Long> countByTenantId(String tenantId);
+
+    Mono<Long> countByTenantIdAndStatus(String tenantId, HashStatus status);
+
+    Mono<Long> countByTenantIdAndSourceService(String tenantId, String sourceService);
+
+    Mono<Long> countByTenantIdAndSourceServiceAndStatus(String tenantId, String sourceService, HashStatus status);
+
     Flux<HashTokenEntity> findByTenantIdAndSourceServiceAndStatus(
             String tenantId,
             String sourceService,

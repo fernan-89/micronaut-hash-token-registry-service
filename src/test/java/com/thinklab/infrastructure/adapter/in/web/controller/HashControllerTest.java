@@ -59,6 +59,7 @@ class HashControllerTest {
     @Mock private ReactivateHashUseCase reactivateHashUseCase;
     @Mock private RevokeHashUseCase revokeHashUseCase;
     @Mock private GetAuditLogsUseCase getAuditLogsUseCase;
+    @Mock private CountHashesUseCase countHashesUseCase;
 
     @InjectMocks
     private HashController controller;
@@ -72,6 +73,7 @@ class HashControllerTest {
      */
     @BeforeEach
     void setUp() {
+        lenient().when(countHashesUseCase.execute(any(), any(), any())).thenReturn(Mono.just(1L));
         dummyToken = HashToken.create(
                 dummyId, tenantId, "mission-control-api", "SEEDED-DATA-2026", "SEEDED-DATA-2026",
                 "3f2e1a...f8e9", HashAlgorithm.SHA3_512, "staff-engineer-01"

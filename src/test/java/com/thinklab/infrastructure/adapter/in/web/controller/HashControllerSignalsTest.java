@@ -1,5 +1,6 @@
 package com.thinklab.infrastructure.adapter.in.web.controller;
 
+import com.thinklab.application.port.in.CountHashesUseCase;
 import com.thinklab.application.port.in.DeactivateHashUseCase;
 import com.thinklab.application.port.in.GenerateHashUseCase;
 import com.thinklab.application.port.in.GetAuditLogsUseCase;
@@ -45,13 +46,15 @@ class HashControllerSignalsTest {
     private final ReactivateHashUseCase reactivate = mock(ReactivateHashUseCase.class);
     private final RevokeHashUseCase revoke = mock(RevokeHashUseCase.class);
     private final GetAuditLogsUseCase audits = mock(GetAuditLogsUseCase.class);
+    private final CountHashesUseCase count = mock(CountHashesUseCase.class);
     private HashController controller;
     private HashToken token;
     private HashAudit audit;
 
     @BeforeEach
     void setUp() {
-        controller = new HashController(generate, get, list, search, deactivate, reactivate, revoke, audits);
+        controller = new HashController(generate, get, list, search, deactivate, reactivate, revoke, audits, count);
+        when(count.execute(any(), any(), any())).thenReturn(Mono.just(7L));
         token = HashToken.create(UUID.randomUUID(), TENANT, "svc", "payload", "payload", "deadbeef", HashAlgorithm.SHA_256, "admin");
         audit = HashAudit.create(UUID.randomUUID(), TENANT, token.id(), "OP", "SUCCESS", "admin", Map.of());
     }
@@ -79,7 +82,10 @@ class HashControllerSignalsTest {
         when(list.execute(any())).thenReturn(Flux.just(token)).thenReturn(Flux.error(BOOM));
 
         StepVerifier.create(controller.retrieveAll(TENANT, null, 0, 20))
-                .assertNext(r -> assertEquals(1, r.body().content().size())).verifyComplete();
+                .assertNext(r -> {
+                    assertEquals(1, r.body().content().size());
+                    assertEquals(7L, r.body().totalElements());
+                }).verifyComplete();
         StepVerifier.create(controller.retrieveAll(TENANT, null, 0, 20)).expectError(IllegalStateException.class).verify();
     }
 
@@ -89,7 +95,10 @@ class HashControllerSignalsTest {
         when(search.execute(any())).thenReturn(Flux.just(token)).thenReturn(Flux.error(BOOM));
 
         StepVerifier.create(controller.search(TENANT, "svc", HashStatus.ACTIVE, 0, 20))
-                .assertNext(r -> assertEquals(1, r.body().content().size())).verifyComplete();
+                .assertNext(r -> {
+                    assertEquals(1, r.body().content().size());
+                    assertEquals(7L, r.body().totalElements());
+                }).verifyComplete();
         StepVerifier.create(controller.search(TENANT, null, null, 0, 20)).expectError(IllegalStateException.class).verify();
     }
 
@@ -99,7 +108,10 @@ class HashControllerSignalsTest {
         when(list.execute(any())).thenReturn(Flux.just(token)).thenReturn(Flux.error(BOOM));
 
         StepVerifier.create(controller.retrieveByStatus(HashStatus.ACTIVE, TENANT, 0, 20))
-                .assertNext(r -> assertEquals(1, r.body().content().size())).verifyComplete();
+                .assertNext(r -> {
+                    assertEquals(1, r.body().content().size());
+                    assertEquals(7L, r.body().totalElements());
+                }).verifyComplete();
         StepVerifier.create(controller.retrieveByStatus(HashStatus.ACTIVE, TENANT, 0, 20)).expectError(IllegalStateException.class).verify();
     }
 

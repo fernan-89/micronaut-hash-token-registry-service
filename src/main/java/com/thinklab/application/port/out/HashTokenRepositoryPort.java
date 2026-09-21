@@ -118,4 +118,7 @@ public interface HashTokenRepositoryPort {
      * @return A {@link Flux} emitting matching {@link HashToken} aggregates.
      */
     Flux<HashToken> findAllByTenantIdAndSourceServiceAndStatus(String tenantId, String sourceService, HashStatus status, Pageable pageable);
+
+    /** Counts the tenant hashes matching the optional source-service and status filters (null = no filter). */
+    Mono<Long> countByFilters(String tenantId, String sourceService, HashStatus status);
 }

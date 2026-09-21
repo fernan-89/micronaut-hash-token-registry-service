@@ -228,4 +228,24 @@ public class HashTokenRepositoryAdapter implements HashTokenRepositoryPort {
                 .doOnSubscribe(s -> log.trace("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] [STATUS: {}] - Fetching hashes by source service and status.", tenantId, sourceService, status))
                 .doOnError(e -> log.error("[ACTION: SEARCH_TOKENS] [TENANT: {}] [SOURCE: {}] [STATUS: {}] - Error searching hashes: {}", tenantId, sourceService, status, e.getMessage(), e));
     }
+
+    @Override
+    public Mono<Long> countByFilters(String tenantId, String sourceService, HashStatus status) {
+        Objects.requireNonNull(tenantId, "Infrastructure constraint violated: Tenant ID is mandatory.");
+        if (tenantId.isBlank()) {
+            throw new IllegalArgumentException("Infrastructure constraint violated: Tenant ID cannot be blank.");
+        }
+
+        Mono<Long> count;
+        if (sourceService != null && status != null) {
+            count = repository.countByTenantIdAndSourceServiceAndStatus(tenantId, sourceService, status);
+        } else if (sourceService != null) {
+            count = repository.countByTenantIdAndSourceService(tenantId, sourceService);
+        } else if (status != null) {
+            count = repository.countByTenantIdAndStatus(tenantId, status);
+        } else {
+            count = repository.countByTenantId(tenantId);
+        }
+        return count.doOnError(e -> log.error("[ACTION: COUNT_TOKENS] [TENANT: {}] - Error counting hashes: {}", tenantId, e.getMessage(), e));
+    }
 }
