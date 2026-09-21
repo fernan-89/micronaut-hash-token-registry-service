@@ -60,25 +60,6 @@ public record GenerateHashRequest(
 ) {
 
     /**
-     * Compact constructor to enforce programmatic fail-fast validation.
-     *
-     * <p><b>Contract:</b> While Jakarta Validation (JSR-380) secures the HTTP edge, this constructor
-     * acts as a secondary defense-in-depth layer. It guarantees that even if this DTO is instantiated
-     * programmatically (e.g., via message brokers or unit tests), it is impossible to create an invalid state.
-     *
-     * @throws NullPointerException if any mandatory parameter is null.
-     * @throws IllegalArgumentException if any mandatory string parameter is blank.
-     */
-    public GenerateHashRequest {
-        Objects.requireNonNull(payload, "Edge Invariant Violation: Payload cannot be null.");
-        Objects.requireNonNull(algorithm, "Edge Invariant Violation: Cryptographic algorithm cannot be null.");
-
-        if (payload.isBlank()) {
-            throw new IllegalArgumentException("Edge Invariant Violation: Payload cannot be blank.");
-        }
-    }
-
-    /**
      * Translates the strictly validated web request payload into a domain-compliant Application Command.
      *
      * <p><b>Contract:</b> This method acts as the secure translation bridge between the Volatile Transport

@@ -37,20 +37,6 @@ public record RevokeHashRequest(
 ) {
 
     /**
-     * Compact constructor to enforce programmatic fail-fast validation.
-     *
-     * @throws NullPointerException if any mandatory parameter is null.
-     * @throws IllegalArgumentException if any mandatory string parameter is blank.
-     */
-    public RevokeHashRequest {
-        Objects.requireNonNull(reason, "Edge Invariant Violation: Reason cannot be null.");
-
-        if (reason.isBlank()) {
-            throw new IllegalArgumentException("Edge Invariant Violation: Reason cannot be blank.");
-        }
-    }
-
-    /**
      * Translates the strictly validated web request payload into a domain-compliant Application Command.
      *
      * @param hashId   The universally unique identifier (UUID) of the target hash, extracted securely from the HTTP Path.
