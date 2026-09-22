@@ -131,3 +131,12 @@ mongodb:
 warmup:
   endpoints:
     google-search: "https://www.google.com"
+# ----------------------------------------------------------------------------------------------
+# Platform security (thinklab-service-kit SecurityFilter). Off by default; set THINKLAB_SECURITY_ENABLED=true
+# and THINKLAB_JWT_SECRET (>= 32 bytes, shared by every service) to require bearer tokens.
+# ----------------------------------------------------------------------------------------------
+thinklab:
+  security:
+    enabled: ${THINKLAB_SECURITY_ENABLED:false}
+    secret: ${THINKLAB_JWT_SECRET:}
+    service-name: thinklab-hash-token-registry-service
