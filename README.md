@@ -18,7 +18,7 @@ Designed under strict Site Reliability Engineering (SRE) and Zero-Trust principl
 * **Persistence:** Reactive MongoDB utilizing BSON Binary UUID Subtype 4 for optimized indexing
 * **Observability:** OpenTelemetry (W3C Standard), SLF4J, Logback (Async), SRE Forensics, and Project Reactor Hooks
 * **Security & Containerization:** Google Distroless (nonroot), Read-Only Root Filesystems, Zero-Trust Capabilities
-* **Testing Suite:** JUnit 5 and Mockito, plus Micronaut Test for application-context tests
+* **Testing Suite:** JUnit 5 and Mockito (unit, 100% line/branch gate), Micronaut Test, and Testcontainers (integration against a real MongoDB replica set)
 * **Documentation:** OpenAPI 3.0 / Swagger (Generated statically at compile-time)
 
 ---
@@ -141,6 +141,19 @@ curl -X POST http://localhost:8080/hash-token-registry/v1/initiate \
   -H "X-Executor: admin-user-01" \
   -d '{"payload":"raw-transaction-data-v1","algorithm":"SHA_256","asSerialKey":false}'
 ```
+
+### Automated Tests
+
+```bash
+./gradlew test               # unit suite + 100% line/branch coverage gate (no Docker needed)
+./gradlew integrationTest    # Testcontainers suite against a real MongoDB replica set (needs Docker)
+./gradlew check              # both, as CI runs it
+```
+
+The integration suite (`src/integrationTest`, [ADR-025](docs/adr/025-integration-tests-with-testcontainers.md))
+exercises the persistence adapters through the generated Micronaut Data queries: UUID ids, `@Version`
+optimistic locking, tenant-scoped paging and counts, the forensic audit ledger, and the declared indexes
+(created on startup by `thinklab-service-kit` 0.5.0).
 
 ### E2E Testing (Postman)
 
