@@ -51,7 +51,7 @@ class ReactivateHashInteractorTest {
         hashId = UUID.randomUUID();
         command = new ReactivateHashCommand(
                 hashId,
-                "nasa-sre-operator",
+                "demo-sre-operator",
                 "Restoring operational capability after security validation."
         );
     }
@@ -70,7 +70,7 @@ class ReactivateHashInteractorTest {
         when(initialToken.reactivate(command.executor())).thenReturn(reactivatedToken);
 
         when(reactivatedToken.id()).thenReturn(hashId);
-        when(reactivatedToken.tenantId()).thenReturn("TENANT-NASA-01");
+        when(reactivatedToken.tenantId()).thenReturn("TENANT-DEMO-01");
 
         when(hashTokenRepository.update(reactivatedToken)).thenReturn(Mono.just(reactivatedToken));
         when(hashAuditRepository.save(any(HashAudit.class))).thenReturn(Mono.just(mockAudit));

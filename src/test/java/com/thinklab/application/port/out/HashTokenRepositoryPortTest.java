@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
  *  Ensures that the outbound port strictly adheres to Identity Sovereignty (ADR 005)
  *  and preserves reactive integrity when interacting with hash token persistence.
  *
- *  <p><b>NASA Level Assurances:</b></p>
+ *  <p><b>Test Guarantees:</b></p>
  *  <ul>
  *      <li><b>Identity Sovereignty:</b> Enforces native {@link UUID} for primary identifiers.</li>
  *      <li><b>BSON Optimization:</b> Aligned with Binary Subtype 4 indexing strategies.</li>
@@ -46,7 +46,7 @@ class HashTokenRepositoryPortTest {
     @BeforeEach
     void setUp() {
         hashId = UUID.randomUUID();
-        tenantId = "TENANT-NASA-PROD-01";
+        tenantId = "TENANT-DEMO-PROD-01";
     }
 
     /**

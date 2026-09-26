@@ -66,7 +66,7 @@ class HashControllerTest {
 
     private HashToken dummyToken;
     private final UUID dummyId = UUID.fromString("9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
-    private final String tenantId = "TENANT-NASA-PROD-01";
+    private final String tenantId = "TENANT-DEMO-PROD-01";
 
     /**
      * Initializes a valid domain aggregate to prevent NullPointerExceptions during DTO projection.
