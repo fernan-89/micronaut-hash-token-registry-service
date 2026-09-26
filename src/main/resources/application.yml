@@ -122,15 +122,12 @@ mongodb:
   retry-writes: true
 
 # ----------------------------------------------------------------------------------------------
-# /**
-#  * @section     Eager Initialization / Dependency Warm-up
-#  * @description Proactively pings external boundaries during the StartupEvent to complete
-#  *              SSL handshakes before receiving external traffic.
-#  */
+# Dependency warm-up and readiness (thinklab-service-kit ExternalEndpointsHealthIndicator): the endpoints
+# listed under warmup.endpoints are probed at startup and gate /health/readiness. This service calls no
+# other service, so there is nothing to list; MongoDB has its own health indicator. (It used to probe
+# https://www.google.com, which made readiness depend on internet access without the service using it.)
 # ----------------------------------------------------------------------------------------------
-warmup:
-  endpoints:
-    google-search: "https://www.google.com"
+
 # ----------------------------------------------------------------------------------------------
 # Platform security (ADR-020, ADR-021). This service only VERIFIES tokens, with the issuer public keys fetched
 # from its JWKS endpoint, and polls the issuer for revoked sessions. Calls to other services use the
