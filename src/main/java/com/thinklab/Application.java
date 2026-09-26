@@ -13,7 +13,7 @@ import java.security.Security;
 import java.util.TimeZone;
 
 /**
- * Main Entry Point: Bootstrap class for the Thinklab Hash Service.
+ * Main Entry Point: Bootstrap class for the Thinklab Hash Token Registry Service.
  *
  * <p><b>Architectural Role:</b>
  * This class orchestrates the application bootstrap sequence using the Micronaut framework, ensuring
@@ -38,7 +38,7 @@ import java.util.TimeZone;
  * <p><i>Note: OpenAPI/Swagger definitions have been decentralized to OpenApiConfig.java (ADR-011).</i>
  *
  * @author Thinklab Systems Engineering Team
- * @version 1.5.0-NASA-SRE-PROD
+ * @version 4.0.0
  * @since 1.0
  */
 public class Application {

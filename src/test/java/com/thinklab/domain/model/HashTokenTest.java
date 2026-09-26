@@ -38,7 +38,7 @@ class HashTokenTest {
     void shouldCreateHashTokenSuccessfully() {
         // Given: High-assurance identity seeds and cryptographic metadata
         UUID id = UUID.randomUUID();
-        String tenantId = "TENANT-NASA-CORE-01";
+        String tenantId = "TENANT-DEMO-CORE-01";
         String sourceService = "mission-control-api";
         String payload = "SEEDED-DATA-2026";
         String generatedHash = "3f2e1a...f8e9";
@@ -149,7 +149,7 @@ class HashTokenTest {
      */
     private HashToken createActiveToken() {
         return HashToken.create(
-                UUID.randomUUID(), "TENANT-NASA-SEED", "test-service",
+                UUID.randomUUID(), "TENANT-DEMO-SEED", "test-service",
                 "payload", "payload", "hash-v1", HashAlgorithm.SHA_256, "unit-test-runner"
         );
     }

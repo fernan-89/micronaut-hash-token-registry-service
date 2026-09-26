@@ -61,7 +61,7 @@ class GenerateHashInteractorTest {
         tenantId = UUID.randomUUID().toString();
         command = new GenerateHashCommand(
                 tenantId,
-                "NASA-MISSION-DATA-2026",
+                "DEMO-SAMPLE-DATA-2026",
                 HashAlgorithm.SHA3_512,
                 "mission-control-service",
                 "staff-engineer-01",
@@ -146,7 +146,7 @@ class GenerateHashInteractorTest {
     @Test
     @DisplayName("A serial-key request formats the digest as five dash-separated groups")
     void shouldFormatSerialKey() {
-        GenerateHashCommand serial = new GenerateHashCommand(tenantId, "NASA-MISSION-DATA-2026", HashAlgorithm.SHA3_512,
+        GenerateHashCommand serial = new GenerateHashCommand(tenantId, "DEMO-SAMPLE-DATA-2026", HashAlgorithm.SHA3_512,
                 "svc", "op", true);
         when(hashTokenRepository.existsActiveByTenantAndPayload(anyString(), anyString())).thenReturn(Mono.just(false));
         when(hashTokenRepository.save(any(HashToken.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));

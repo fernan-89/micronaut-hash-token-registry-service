@@ -1,12 +1,12 @@
 # Thinklab Hash Service
 
-**Version:** v3.5.2-NASA-SRE-PROD
+**Version:** 4.0.0
 
-**Status:** Production-Ready (Mission-Critical)
+**Status:** Reference implementation — portfolio project
 
 ## Overview
 
-The Thinklab Hash Service is a mission-critical, high-assurance microservice engineered for the authoritative management of the complete lifecycle of cryptographic hash tokens. Developed using Java 21 and the Micronaut Framework, this service utilizes strict Hexagonal Architecture (Ports and Adapters) combined with a fully Reactive Stack to ensure high throughput, zero-blocking I/O, and absolute structural maintainability for enterprise-scale identity and security ecosystems.
+The Thinklab Hash Service is a microservice for the authoritative management of the complete lifecycle of cryptographic hash tokens. Developed using Java 21 and the Micronaut Framework, this service utilizes strict Hexagonal Architecture (Ports and Adapters) combined with a fully Reactive Stack to ensure high throughput, zero-blocking I/O, and absolute structural maintainability for enterprise-scale identity and security ecosystems.
 
 Designed under strict Site Reliability Engineering (SRE) and Zero-Trust principles, the service features deterministic containerization, Ahead-of-Time (AOT) bytecode optimizations, and resilient telemetry pipelines capable of surviving transient infrastructure failures.
 
@@ -18,7 +18,7 @@ Designed under strict Site Reliability Engineering (SRE) and Zero-Trust principl
 * **Persistence:** Reactive MongoDB utilizing BSON Binary UUID Subtype 4 for optimized indexing
 * **Observability:** OpenTelemetry (W3C Standard), SLF4J, Logback (Async), SRE Forensics, and Project Reactor Hooks
 * **Security & Containerization:** Google Distroless (nonroot), Read-Only Root Filesystems, Zero-Trust Capabilities
-* **Testing Suite:** JUnit 5, Mockito (Unit), and Testcontainers (Integration)
+* **Testing Suite:** JUnit 5, Mockito and Reactor Test (unit tests)
 * **Documentation:** OpenAPI 3.0 / Swagger (Generated statically at compile-time)
 
 ---
