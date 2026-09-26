@@ -15,7 +15,7 @@ import jakarta.inject.Inject;
  *
  *  <p><b>Architectural Role:</b> Infrastructure Layer - Bootstrap Verification.</p>
  *
- *  <p><b>NASA Level Assurances:</b></p>
+ *  <p><b>Test Assurances:</b></p>
  *  <ul>
  *      <li><b>Container Integrity:</b> Verifies that all {@link jakarta.inject.Singleton} beans,
  *      Ports, and Adapters can be instantiated without circular dependencies or missing definitions.</li>

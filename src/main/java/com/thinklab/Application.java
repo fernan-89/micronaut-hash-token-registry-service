@@ -38,7 +38,7 @@ import java.util.TimeZone;
  * <p><i>Note: OpenAPI/Swagger definitions have been decentralized to OpenApiConfig.java (ADR-011).</i>
  *
  * @author Thinklab Systems Engineering Team
- * @version 1.5.0-NASA-SRE-PROD
+ * @version 1.5.0
  * @since 1.0
  */
 public class Application {

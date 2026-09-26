@@ -1,8 +1,8 @@
 # Thinklab Hash Service
 
-**Version:** v3.5.2-NASA-SRE-PROD
+**Version:** v3.5.2
 
-**Status:** Production-Ready (Mission-Critical)
+**Status:** Reference implementation (ThinkLab portfolio project)
 
 ## Overview
 
@@ -18,7 +18,7 @@ Designed under strict Site Reliability Engineering (SRE) and Zero-Trust principl
 * **Persistence:** Reactive MongoDB utilizing BSON Binary UUID Subtype 4 for optimized indexing
 * **Observability:** OpenTelemetry (W3C Standard), SLF4J, Logback (Async), SRE Forensics, and Project Reactor Hooks
 * **Security & Containerization:** Google Distroless (nonroot), Read-Only Root Filesystems, Zero-Trust Capabilities
-* **Testing Suite:** JUnit 5, Mockito (Unit), and Testcontainers (Integration)
+* **Testing Suite:** JUnit 5 and Mockito, plus Micronaut Test for application-context tests
 * **Documentation:** OpenAPI 3.0 / Swagger (Generated statically at compile-time)
 
 ---
