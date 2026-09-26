@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.info.License;
  * interface contract. No reflection is used at runtime to serve this documentation.
  *
  * @author Thinklab Core Infrastructure Team
- * @version 3.4.1-NASA-SRE-PROD
+ * @version 3.4.1
  * @since 1.0
  */
 @OpenAPIDefinition(

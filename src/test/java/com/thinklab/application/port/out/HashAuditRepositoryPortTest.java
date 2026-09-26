@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  *  This suite ensures that the infrastructure port strictly adheres to Identity
  *  Sovereignty (ADR 005) and preserves reactive integrity for forensic auditing.
  *
- *  <p><b>NASA Level Assurances:</b></p>
+ *  <p><b>Test Assurances:</b></p>
  *  <ul>
  *      <li><b>Identity Sovereignty:</b> Enforces native {@link UUID} for all primary and entity identifiers.</li>
  *      <li><b>BSON Optimization:</b> Aligned with Binary Subtype 4 indexing strategies for high-assurance storage.</li>
