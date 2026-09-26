@@ -46,7 +46,7 @@ class HashTokenRepositoryPortTest {
     @BeforeEach
     void setUp() {
         hashId = UUID.randomUUID();
-        tenantId = "TENANT-NASA-PROD-01";
+        tenantId = "TENANT-PROD-01";
     }
 
     /**

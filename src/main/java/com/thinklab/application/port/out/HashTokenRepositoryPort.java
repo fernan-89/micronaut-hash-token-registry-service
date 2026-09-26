@@ -14,7 +14,7 @@ import java.util.UUID;
  * <p><b>Architectural Role:</b>
  * This interface defines the outbound persistence contract (driven port) that infrastructure adapters
  * must implement to guarantee atomic, consistent storage and retrieval operations for the cryptographic
- * hash registry. Designed for mission-critical systems, it strictly enforces reactive, non-blocking
+ * hash registry. It strictly enforces reactive, non-blocking
  * communication patterns between the core domain layer and underlying persistence adapters.
  *
  * <p><b>Contractual Obligations:</b>
