@@ -45,7 +45,7 @@ class HashAuditRepositoryPortTest {
     void setUp() {
         txId = UUID.randomUUID();
         entityId = UUID.randomUUID();
-        tenantId = "TENANT-NASA-PROD-01";
+        tenantId = "TENANT-PROD-01";
     }
 
     /**

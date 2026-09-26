@@ -37,12 +37,12 @@ class HashAuditTest {
     void shouldCreateHashAuditViaFactory() {
         // Given: Deterministic identity seeds and forensic metadata
         UUID txId = UUID.randomUUID();
-        String tenantId = "TENANT-NASA-CORE-01";
+        String tenantId = "TENANT-CORE-01";
         UUID entityId = UUID.randomUUID();
         String operation = "GENERATE_HASH";
         String status = "SUCCESS";
         String executorId = "staff-engineer-01";
-        Map<String, Object> metadata = Map.of("ip_address", "10.0.0.1", "tier", "MISSION_CRITICAL");
+        Map<String, Object> metadata = Map.of("ip_address", "10.0.0.1", "tier", "CRITICAL");
 
         // When: Materializing the forensic record
         HashAudit audit = HashAudit.create(txId, tenantId, entityId, operation, status, executorId, metadata);
@@ -71,7 +71,7 @@ class HashAuditTest {
     void shouldHandleNullMetadataInFactory() {
         // When: Attempting to create an audit with a null context payload
         HashAudit audit = HashAudit.create(
-                UUID.randomUUID(), "TENANT-NASA-01", UUID.randomUUID(),
+                UUID.randomUUID(), "TENANT-01", UUID.randomUUID(),
                 "DEACTIVATION", "SUCCESS", "system-agent", null
         );
 
@@ -92,7 +92,7 @@ class HashAuditTest {
         mutableMetadata.put("initial_key", "initial_value");
 
         HashAudit audit = HashAudit.create(
-                UUID.randomUUID(), "TENANT-NASA-01", UUID.randomUUID(),
+                UUID.randomUUID(), "TENANT-01", UUID.randomUUID(),
                 "CREATION", "SUCCESS", "admin", mutableMetadata
         );
 
