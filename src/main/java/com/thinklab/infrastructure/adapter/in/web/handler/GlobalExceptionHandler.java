@@ -51,6 +51,7 @@ import java.util.UUID;
 @Requires(classes = {ExceptionHandler.class})
 public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpResponse<Map<String, Object>>> {
 
+    private static final String UNKNOWN_ENUM_PREFIX = "No enum constant ";
     private static final String PROBLEM_TYPE_BASE_URI = "https://api.thinklab.com/errors/";
     private static final String MDC_TRACE_KEY = "traceId";
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
@@ -96,9 +97,9 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
             }
 
             if (exception instanceof IllegalArgumentException illegalArgumentEx) {
-                log.warn("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - Malformed input intercepted: {}",
-                        path, illegalArgumentEx.getMessage());
-                return handleValidationMessage(illegalArgumentEx.getMessage(), path);
+                String message = describe(illegalArgumentEx);
+                log.warn("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - Malformed input intercepted: {}", path, message);
+                return handleValidationMessage(message, path);
             }
 
             log.error("[ACTION: GLOBAL_EXCEPTION_HANDLER] [PATH: {}] - CRITICAL: Unhandled technical failure encountered in pipeline: {}",
@@ -113,6 +114,15 @@ public class GlobalExceptionHandler implements ExceptionHandler<Throwable, HttpR
      * Maps known domain business exceptions to their corresponding HTTP status codes (404, 409, 422, etc.)
      * and constructs an RFC 7807 compliant problem body.
      */
+    /**
+     * A value that is not in a fixed list (an enum) is reported by the JDK with the value itself in the message. What a caller sent is never
+     * repeated, neither in the answer nor in the log: it could hold a path or a credential.
+     */
+    private static String describe(IllegalArgumentException exception) {
+        String message = exception.getMessage();
+        return message != null && message.startsWith(UNKNOWN_ENUM_PREFIX) ? "A value outside the allowed list was given." : message;
+    }
+
     private HttpResponse<Map<String, Object>> handleBusinessException(BusinessException ex, String path) {
         HttpStatus status = switch (ex.getErrorCode()) {
             case "ERR-HASH-00404" -> HttpStatus.NOT_FOUND;
